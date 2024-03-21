@@ -58,7 +58,7 @@ router.post("/", async function (req, res) {
 
   const { comp_code, amt } = req.body;
 
-  const results = await db.query(
+  const results = await db.query(         //TODO: check for comp_code existence
     `INSERT INTO invoices (comp_code, amt)
         VALUES ($1, $2)
         RETURNING id, comp_code, amt, paid, add_date, paid_date`, [comp_code, amt]
