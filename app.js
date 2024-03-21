@@ -1,4 +1,5 @@
 /** BizTime express application. */
+"use strict";
 
 const express = require("express");
 const { NotFoundError } = require("./expressError");
@@ -8,6 +9,7 @@ const app = express();
 
 app.use(express.json());
 
+/** Handles all routes to /companies */
 app.use('/companies', companiesRoutes);
 
 

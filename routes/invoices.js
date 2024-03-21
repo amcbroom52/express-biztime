@@ -1,3 +1,5 @@
+"use strict";
+
 const express = require('express');
 let db = require('../db');
 const { BadRequestError, NotFoundError } = require('../expressError');
