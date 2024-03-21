@@ -18,30 +18,43 @@ router.get('/', async function (req, res) {
   return res.json({ invoices });
 });
 
+//TODO: custom error messages (if desired)
 /** Returns json of data for an invoice
  *
- * {invoice: {id, amt, paid, add_date, paid_date,   TODO: all on separate lines
- *  company: {code, name, description}}}*/
+ * {invoice: {id, amt, paid, add_date, paid_date,
+ *  company: {code, name, description}}}
+ */
 router.get("/:id", async function (req, res) {
-  const iResults = await db.query(    //TODO: single query
-    `SELECT id, amt, paid, add_date, paid_date
+  const results = await db.query(
+    `SELECT id,
+            amt,
+            paid,
+            add_date,
+            paid_date,
+            code,
+            name,
+            description
         FROM invoices
+        JOIN companies ON companies.code = invoices.comp_code
         WHERE id = $1`, [req.params.id]
   );
 
-  const invoice = iResults.rows[0];
+  const invoiceData = results.rows[0];
 
-  if (!invoice) throw new NotFoundError();
+  if (!invoiceData) throw new NotFoundError();
 
-  const cResults = await db.query(
-    `SELECT DISTINCT code, name, description
-        FROM companies
-        JOIN invoices ON invoices.comp_code = companies.code
-        WHERE id = $1`, [req.params.id]
-  );
-
-  const company = cResults.rows[0];
-  invoice.company = company;
+  const invoice = {
+    id: invoiceData.id,
+    amt: invoiceData.amt,
+    paid: invoiceData.paid,
+    add_date: invoiceData.add_date,
+    paid_date: invoiceData.paid_date,
+    company: {
+      code: invoiceData.code,
+      name: invoiceData.name,
+      description: invoiceData.description,
+    }
+  };
 
   return res.json({ invoice });
 });
@@ -58,15 +71,21 @@ router.post("/", async function (req, res) {
 
   const { comp_code, amt } = req.body;
 
-  const results = await db.query(         //TODO: check for comp_code existence
+  const cResults = await db.query(
+    `SELECT code
+        FROM companies
+        WHERE code = $1`, [comp_code]
+  );
+
+  if (!cResults.rows[0]) throw new NotFoundError();
+
+  const iResults = await db.query(
     `INSERT INTO invoices (comp_code, amt)
         VALUES ($1, $2)
         RETURNING id, comp_code, amt, paid, add_date, paid_date`, [comp_code, amt]
   );
 
-  const invoice = results.rows[0];
-
-  if (!invoice) throw new NotFoundError();
+  const invoice = iResults.rows[0];
 
   return res
     .status(201)
